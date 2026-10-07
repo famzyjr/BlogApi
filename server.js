@@ -20,9 +20,25 @@ const blogs = [
   }
 ];
 
+
+
 // Get all blogs
 app.get("/api/blogs", (req, res) => {
   res.json(blogs);
+});
+
+app.get("/api/blogs/:id", (req, res) => {
+  const id = Number(req.params.id);
+
+  const blog = blogs.find((blog) => blog.id === id);
+
+  if (!blog) {
+    return res.status(404).json({
+      message: "Blog not found"
+    });
+  }
+
+  res.json(blog);
 });
 
 app.listen(PORT, () => {
