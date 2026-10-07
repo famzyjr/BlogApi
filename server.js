@@ -1,4 +1,10 @@
 const express = require("express");
+const mongoose = require("mongoose");
+require("dotenv").config();
+
+console.log("MONGO_URI exists:", !!process.env.MONGO_URI);
+
+const Blog = require("./models/Blog");
 
 const app = express();
 
@@ -6,93 +12,121 @@ app.use(express.json());
 
 const PORT = 5000;
 
-// Temporary blog data
-const blogs = [
-  {
-    id: 1,
-    title: "Getting Started with React",
-    author: "Ahmed",
-    content: "React is a JavaScript library for building user interfaces.",
-  },
-  {
-    id: 2,
-    title: "Understanding JavaScript",
-    author: "John",
-    content: "JavaScript is one of the most popular programming languages.",
-  },
-];
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB connected successfully");
+  })
+  .catch((error) => {
+    console.log("MongoDB connection failed");
+    console.log("Error name:", error.name);
+    console.log("Error message:", error.message);
+  });
 
 // Get all blogs
-app.get("/api/blogs", (req, res) => {
-  res.json(blogs);
-});
+app.get("/api/blogs", async (req, res) => {
+  try {
+    const blogs = await Blog.find();
 
-app.get("/api/blogs/:id", (req, res) => {
-  const id = Number(req.params.id);
-
-  const blog = blogs.find((blog) => blog.id === id);
-
-  if (!blog) {
-    return res.status(404).json({
-      message: "Blog not found",
+    res.json(blogs);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch blogs",
+      error: error.message,
     });
   }
-
-  res.json(blog);
 });
 
-app.post("/api/blogs", (req, res) => {
-  const { title, author, content } = req.body;
+app.get("/api/blogs/:id", async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id);
 
-  const newBlog = {
-    id: blogs.length + 1,
-    title,
-    author,
-    content,
-  };
+    if (!blog) {
+      return res.status(404).json({
+        message: "Blog not found",
+      });
+    }
 
-  blogs.push(newBlog);
-
-  res.status(201).json(newBlog);
-});
-
-app.put("/api/blogs/:id", (req, res) => {
-  const id = Number(req.params.id);
-
-  const blog = blogs.find((blog) => blog.id === id);
-
-  if (!blog) {
-    return res.status(404).json({
-      message: "Blog not found"
+    res.json(blog);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch blog",
+      error: error.message,
     });
   }
-
-  const { title, author, content } = req.body;
-
-  blog.title = title;
-  blog.author = author;
-  blog.content = content;
-
-  res.json(blog);
 });
 
-app.delete("/api/blogs/:id", (req, res) => {
-  const id = Number(req.params.id);
+app.post("/api/blogs", async (req, res) => {
+  try {
+    const { title, author, content } = req.body;
 
-  const blogIndex = blogs.findIndex((blog) => blog.id === id);
+    const newBlog = await Blog.create({
+      title,
+      author,
+      content,
+    });
 
-  if (blogIndex === -1) {
-    return res.status(404).json({
-      message: "Blog not found"
+    res.status(201).json(newBlog);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to create blog",
+      error: error.message,
     });
   }
+});
 
-  const deletedBlog = blogs.splice(blogIndex, 1);
+app.put("/api/blogs/:id", async (req, res) => {
+  try {
+    const { title, author, content } = req.body;
 
-  res.json({
-    message: "Blog deleted successfully",
-    blog: deletedBlog[0]
-  });
+    const updatedBlog = await Blog.findByIdAndUpdate(
+      req.params.id,
+      {
+        title,
+        author,
+        content,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!updatedBlog) {
+      return res.status(404).json({
+        message: "Blog not found",
+      });
+    }
+
+    res.json(updatedBlog);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to update blog",
+      error: error.message,
+    });
+  }
+});
+
+app.delete("/api/blogs/:id", async (req, res) => {
+  try {
+    const deletedBlog = await Blog.findByIdAndDelete(req.params.id);
+
+    if (!deletedBlog) {
+      return res.status(404).json({
+        message: "Blog not found",
+      });
+    }
+
+    res.json({
+      message: "Blog deleted successfully",
+      blog: deletedBlog,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete blog",
+      error: error.message,
+    });
+  }
 });
 
 app.listen(PORT, () => {
