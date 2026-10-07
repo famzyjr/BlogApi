@@ -2,6 +2,8 @@ const express = require("express");
 
 const app = express();
 
+app.use(express.json());
+
 const PORT = 5000;
 
 // Temporary blog data
@@ -39,6 +41,21 @@ app.get("/api/blogs/:id", (req, res) => {
   }
 
   res.json(blog);
+});
+
+app.post("/api/blogs", (req, res) => {
+  const { title, author, content } = req.body;
+
+  const newBlog = {
+    id: blogs.length + 1,
+    title,
+    author,
+    content
+  };
+
+  blogs.push(newBlog);
+
+  res.status(201).json(newBlog);
 });
 
 app.listen(PORT, () => {
