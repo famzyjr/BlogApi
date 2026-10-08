@@ -88,10 +88,10 @@ app.put("/api/blogs/:id", async (req, res, next) => {
       });
     }
 
-    const { title, author, content } = req.body;
+    const { title,  content } = req.body;
 
     // Validate required fields
-    if (!title || !author || !content) {
+    if (!title || !content) {
       return res.status(400).json({
         message: "Title, author and content are required",
       });
@@ -101,7 +101,6 @@ app.put("/api/blogs/:id", async (req, res, next) => {
       req.params.id,
       {
         title,
-        author,
         content,
       },
       {
