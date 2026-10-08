@@ -2,8 +2,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
-console.log("MONGO_URI exists:", !!process.env.MONGO_URI);
-
 const Blog = require("./models/Blog");
 
 const app = express();
@@ -11,6 +9,8 @@ const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
+
+
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -23,22 +23,28 @@ mongoose
     console.log("Error message:", error.message);
   });
 
-// Get all blogs
-app.get("/api/blogs", async (req, res) => {
+
+app.get("/api/blogs", async (req, res, next) => {
   try {
     const blogs = await Blog.find();
 
     res.json(blogs);
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to fetch blogs",
-      error: error.message,
-    });
+    next(error);
   }
 });
 
-app.get("/api/blogs/:id", async (req, res) => {
+
+
+app.get("/api/blogs/:id", async (req, res, next) => {
   try {
+    // Check if ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        message: "Invalid blog ID",
+      });
+    }
+
     const blog = await Blog.findById(req.params.id);
 
     if (!blog) {
@@ -49,16 +55,22 @@ app.get("/api/blogs/:id", async (req, res) => {
 
     res.json(blog);
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to fetch blog",
-      error: error.message,
-    });
+    next(error);
   }
 });
 
-app.post("/api/blogs", async (req, res) => {
+
+
+app.post("/api/blogs", async (req, res, next) => {
   try {
     const { title, author, content } = req.body;
+
+    // Validate required fields
+    if (!title || !author || !content) {
+      return res.status(400).json({
+        message: "Title, author and content are required",
+      });
+    }
 
     const newBlog = await Blog.create({
       title,
@@ -68,16 +80,29 @@ app.post("/api/blogs", async (req, res) => {
 
     res.status(201).json(newBlog);
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to create blog",
-      error: error.message,
-    });
+    next(error);
   }
 });
 
-app.put("/api/blogs/:id", async (req, res) => {
+
+
+app.put("/api/blogs/:id", async (req, res, next) => {
   try {
+    // Check if ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        message: "Invalid blog ID",
+      });
+    }
+
     const { title, author, content } = req.body;
+
+    // Validate required fields
+    if (!title || !author || !content) {
+      return res.status(400).json({
+        message: "Title, author and content are required",
+      });
+    }
 
     const updatedBlog = await Blog.findByIdAndUpdate(
       req.params.id,
@@ -100,15 +125,21 @@ app.put("/api/blogs/:id", async (req, res) => {
 
     res.json(updatedBlog);
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to update blog",
-      error: error.message,
-    });
+    next(error);
   }
 });
 
-app.delete("/api/blogs/:id", async (req, res) => {
+
+
+app.delete("/api/blogs/:id", async (req, res, next) => {
   try {
+    // Check if ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        message: "Invalid blog ID",
+      });
+    }
+
     const deletedBlog = await Blog.findByIdAndDelete(req.params.id);
 
     if (!deletedBlog) {
@@ -122,12 +153,32 @@ app.delete("/api/blogs/:id", async (req, res) => {
       blog: deletedBlog,
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to delete blog",
-      error: error.message,
-    });
+    next(error);
   }
 });
+
+
+
+app.get("/api/test-error", (req, res, next) => {
+  try {
+    throw new Error("This is a test error");
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  res.status(500).json({
+    message: "Something went wrong",
+    error: err.message,
+  });
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
