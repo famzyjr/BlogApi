@@ -321,7 +321,6 @@ Possible future improvements include:
 * Image uploads
 * Improved validation
 * Rate limiting
-* Connecting the API to the IBlog React frontend
 
 ## 📚 What I Learned
 
