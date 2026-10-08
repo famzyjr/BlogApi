@@ -4,13 +4,13 @@ require("dotenv").config();
 
 const Blog = require("./models/Blog");
 
+const cors = require("cors");
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
-
-
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -23,7 +23,6 @@ mongoose
     console.log("Error message:", error.message);
   });
 
-
 app.get("/api/blogs", async (req, res, next) => {
   try {
     const blogs = await Blog.find();
@@ -33,8 +32,6 @@ app.get("/api/blogs", async (req, res, next) => {
     next(error);
   }
 });
-
-
 
 app.get("/api/blogs/:id", async (req, res, next) => {
   try {
@@ -59,8 +56,6 @@ app.get("/api/blogs/:id", async (req, res, next) => {
   }
 });
 
-
-
 app.post("/api/blogs", async (req, res, next) => {
   try {
     const { title, author, content } = req.body;
@@ -83,8 +78,6 @@ app.post("/api/blogs", async (req, res, next) => {
     next(error);
   }
 });
-
-
 
 app.put("/api/blogs/:id", async (req, res, next) => {
   try {
@@ -114,7 +107,7 @@ app.put("/api/blogs/:id", async (req, res, next) => {
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     if (!updatedBlog) {
@@ -128,8 +121,6 @@ app.put("/api/blogs/:id", async (req, res, next) => {
     next(error);
   }
 });
-
-
 
 app.delete("/api/blogs/:id", async (req, res, next) => {
   try {
@@ -157,8 +148,6 @@ app.delete("/api/blogs/:id", async (req, res, next) => {
   }
 });
 
-
-
 app.get("/api/test-error", (req, res, next) => {
   try {
     throw new Error("This is a test error");
@@ -166,8 +155,6 @@ app.get("/api/test-error", (req, res, next) => {
     next(error);
   }
 });
-
-
 
 app.use((err, req, res, next) => {
   console.error(err);
@@ -177,8 +164,6 @@ app.use((err, req, res, next) => {
     error: err.message,
   });
 });
-
-
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
